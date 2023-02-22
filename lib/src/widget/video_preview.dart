@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:video_player/video_player.dart';
+import 'package:visibility_detector/visibility_detector.dart';
 import 'package:wechat_assets_picker/wechat_assets_picker.dart';
 
 class VideoPreview extends StatelessWidget {
@@ -53,6 +54,8 @@ class VideoPreviewPlayer extends StatefulWidget {
 class _VideoPreviewPlayerState extends State<VideoPreviewPlayer> {
   late final VideoPlayerController _controller;
 
+  bool isPlaying = true;
+
   @override
   void initState() {
     _controller = VideoPlayerController.file(widget.file)
@@ -81,13 +84,29 @@ class _VideoPreviewPlayerState extends State<VideoPreviewPlayer> {
                 _controller.value.isPlaying
                     ? _controller.pause()
                     : _controller.play();
+
+                isPlaying = !isPlaying;
               }),
               child: AspectRatio(
                 aspectRatio: _controller.value.aspectRatio,
                 child: Stack(
                   children: [
-                    VideoPlayer(_controller),
-                    if (!_controller.value.isPlaying)
+                    VisibilityDetector(
+                      key: Key(widget.file.path),
+                      onVisibilityChanged: (info) {
+                        if (!mounted) return;
+                        if (isPlaying == false) return;
+
+                        setState(() {
+                          isPlaying = info.visibleFraction > 0;
+                          info.visibleFraction > 0
+                              ? _controller.play()
+                              : _controller.pause();
+                        });
+                      },
+                      child: VideoPlayer(_controller),
+                    ),
+                    if (!isPlaying)
                       const Align(
                         child: Icon(
                           Icons.play_arrow,
