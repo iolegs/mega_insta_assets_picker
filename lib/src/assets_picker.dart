@@ -256,7 +256,7 @@ class InstaAssetPicker {
       maxAssets: maxAssets,
       pageSize: pageSize,
       pathThumbnailSize: pathThumbnailSize,
-      requestType: RequestType.image,
+      requestType: RequestType.common,
       sortPathDelegate: sortPathDelegate,
       sortPathsByModifiedDate: sortPathsByModifiedDate,
       filterOptions: filterOptions,

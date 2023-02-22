@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:insta_assets_picker/src/custom_packages/image_crop/crop.dart';
 import 'package:insta_assets_picker/src/insta_assets_crop_controller.dart';
+import 'package:insta_assets_picker/src/widget/video_preview.dart';
 import 'package:provider/provider.dart';
 import 'package:extended_image/extended_image.dart';
 import 'package:insta_assets_picker/src/widget/circle_icon_button.dart';
@@ -63,58 +64,67 @@ class CropViewerState extends State<CropViewer> {
   /// Returns the [Crop] widget
   Widget _buildCropView(AssetEntity asset, CropInternal? cropParam) => Opacity(
         opacity: widget.controller.isCropViewReady.value ? widget.opacity : 1.0,
-        child: Crop(
-          key: _cropKey,
-          image: AssetEntityImageProvider(asset, isOriginal: true),
-          placeholderWidget: ValueListenableBuilder<bool>(
-            valueListenable: _isLoadingError,
-            builder: (context, isLoadingError, child) => Stack(
-              alignment: Alignment.center,
-              children: [
-                Opacity(
-                  opacity: widget.opacity,
-                  child: ExtendedImage(
-                    // to match crop alignment
-                    alignment: widget.controller.isSquare.value
-                        ? Alignment.center
-                        : Alignment.bottomCenter,
-                    height: widget.height,
-                    width: widget.height * widget.controller.aspectRatio,
-                    image: AssetEntityImageProvider(asset, isOriginal: false),
-                    enableMemoryCache: false,
-                    fit: BoxFit.cover,
+        child: asset.type == AssetType.video
+            ? VideoPreview(
+                key: Key(asset.id),
+                asset: asset,
+              )
+            : Crop(
+                key: _cropKey,
+                image: AssetEntityImageProvider(asset, isOriginal: true),
+                placeholderWidget: ValueListenableBuilder<bool>(
+                  valueListenable: _isLoadingError,
+                  builder: (context, isLoadingError, child) => Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      Opacity(
+                        opacity: widget.opacity,
+                        child: ExtendedImage(
+                          // to match crop alignment
+                          alignment: widget.controller.isSquare.value
+                              ? Alignment.center
+                              : Alignment.bottomCenter,
+                          height: widget.height,
+                          width: widget.height * widget.controller.aspectRatio,
+                          image: AssetEntityImageProvider(asset,
+                              isOriginal: false),
+                          enableMemoryCache: false,
+                          fit: BoxFit.cover,
+                        ),
+                      ),
+                      // show backdrop when image is loading or if an error occured
+                      Positioned.fill(
+                          child: DecoratedBox(
+                        decoration: BoxDecoration(
+                            color: widget.theme?.cardColor.withOpacity(0.4)),
+                      )),
+                      isLoadingError
+                          ? Text(widget.textDelegate.loadFailed)
+                          : widget.loaderWidget,
+                    ],
                   ),
                 ),
-                // show backdrop when image is loading or if an error occured
-                Positioned.fill(
-                    child: DecoratedBox(
-                  decoration: BoxDecoration(
-                      color: widget.theme?.cardColor.withOpacity(0.4)),
-                )),
-                isLoadingError
-                    ? Text(widget.textDelegate.loadFailed)
-                    : widget.loaderWidget,
-              ],
-            ),
-          ),
-          // if the image could not be loaded (i.e unsupported format like RAW)
-          // unselect it and clear cache, also show the error widget
-          onImageError: (exception, stackTrace) {
-            widget.provider.unSelectAsset(asset);
-            AssetEntityImageProvider(asset).evict();
-            WidgetsBinding.instance.addPostFrameCallback((_) {
-              _isLoadingError.value = true;
-              widget.controller.isCropViewReady.value = true;
-            });
-          },
-          onLoading: (isReady) => WidgetsBinding.instance.addPostFrameCallback(
-              (_) => widget.controller.isCropViewReady.value = isReady),
-          maximumScale: 10,
-          aspectRatio: widget.controller.aspectRatio,
-          disableResize: true,
-          backgroundColor: widget.theme!.canvasColor,
-          initialParam: cropParam,
-        ),
+                // if the image could not be loaded (i.e unsupported format like RAW)
+                // unselect it and clear cache, also show the error widget
+                onImageError: (exception, stackTrace) {
+                  widget.provider.unSelectAsset(asset);
+                  AssetEntityImageProvider(asset).evict();
+                  WidgetsBinding.instance.addPostFrameCallback(
+                    (_) {
+                      _isLoadingError.value = true;
+                      widget.controller.isCropViewReady.value = true;
+                    },
+                  );
+                },
+                onLoading: (isReady) => WidgetsBinding.instance
+                    .addPostFrameCallback((_) =>
+                        widget.controller.isCropViewReady.value = isReady),
+                maximumScale: 10,
+                aspectRatio: widget.controller.aspectRatio,
+                disableResize: true,
+                backgroundColor: widget.theme!.canvasColor,
+                initialParam: cropParam,
+              ),
       );
 
   @override
@@ -158,28 +168,29 @@ class CropViewerState extends State<CropViewer> {
                                 child: _buildCropView(asset, savedCropParam),
                               ),
                               // Build crop aspect ratio button
-                              Positioned(
-                                left: 0,
-                                bottom: 12,
-                                child: CircleIconButton(
-                                  onTap: () {
-                                    if (widget
-                                        .controller.isCropViewReady.value) {
-                                      widget.controller.isSquare.value =
-                                          !isSquare;
-                                    }
-                                  },
-                                  theme: widget.theme,
-                                  icon: Transform.rotate(
-                                    angle: 45 * math.pi / 180,
-                                    child: Icon(
-                                      isSquare
-                                          ? Icons.unfold_more
-                                          : Icons.unfold_less,
+                              if (asset.type != AssetType.video)
+                                Positioned(
+                                  left: 0,
+                                  bottom: 12,
+                                  child: CircleIconButton(
+                                    onTap: () {
+                                      if (widget
+                                          .controller.isCropViewReady.value) {
+                                        widget.controller.isSquare.value =
+                                            !isSquare;
+                                      }
+                                    },
+                                    theme: widget.theme,
+                                    icon: Transform.rotate(
+                                      angle: 45 * math.pi / 180,
+                                      child: Icon(
+                                        isSquare
+                                            ? Icons.unfold_more
+                                            : Icons.unfold_less,
+                                      ),
                                     ),
                                   ),
                                 ),
-                              ),
                             ],
                           ),
                         );
