@@ -68,6 +68,8 @@ class CropViewerState extends State<CropViewer> {
             ? VideoPreview(
                 key: Key(asset.id),
                 asset: asset,
+                onLoading: () => WidgetsBinding.instance.addPostFrameCallback(
+                    (_) => widget.controller.isCropViewReady.value = true),
               )
             : Crop(
                 key: _cropKey,

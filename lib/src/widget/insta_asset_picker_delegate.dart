@@ -149,8 +149,7 @@ class InstaAssetPickerBuilder extends DefaultAssetPickerBuilderDelegate {
     int index,
     AssetEntity currentAsset,
   ) async {
-    if (_cropController.isCropViewReady.value != true &&
-        _cropController.previewAsset.value!.type != AssetType.video) {
+    if (_cropController.isCropViewReady.value != true) {
       return;
     }
 

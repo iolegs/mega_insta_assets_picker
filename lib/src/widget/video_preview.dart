@@ -9,9 +9,11 @@ class VideoPreview extends StatelessWidget {
   const VideoPreview({
     super.key,
     required this.asset,
+    this.onLoading,
   });
 
   final AssetEntity asset;
+  final VoidCallback? onLoading;
 
   @override
   Widget build(BuildContext context) {
@@ -21,6 +23,8 @@ class VideoPreview extends StatelessWidget {
         if (snapshot.hasError) {
           return Center(child: Text(snapshot.error.toString()));
         }
+
+        if (snapshot.hasData && onLoading != null) onLoading!();
 
         return snapshot.hasData
             ? VideoPreviewPlayer(file: snapshot.data!)
