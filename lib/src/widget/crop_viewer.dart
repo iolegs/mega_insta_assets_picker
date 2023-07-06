@@ -8,6 +8,7 @@ import 'package:insta_assets_picker/src/widget/video_preview.dart';
 import 'package:provider/provider.dart';
 import 'package:extended_image/extended_image.dart';
 import 'package:insta_assets_picker/src/widget/circle_icon_button.dart';
+import 'package:wechat_assets_picker/wechat_assets_picker.dart';
 
 class CropViewer extends StatefulWidget {
   const CropViewer({
@@ -72,25 +73,38 @@ class CropViewerState extends State<CropViewer> {
                     (_) => widget.controller.isCropViewReady.value = true),
               )
             : Crop(
-          key: _cropKey,
-          image: AssetEntityImageProvider(asset, isOriginal: true),
-          placeholderWidget: ValueListenableBuilder<bool>(
-            valueListenable: _isLoadingError,
-            builder: (context, isLoadingError, child) => Stack(
-              alignment: Alignment.center,
-              children: [
-                Opacity(
-                  opacity: widget.opacity,
-                  child: ExtendedImage(
-                    // to match crop alignment
-                    alignment: widget.controller.aspectRatio == 1.0
-                        ? Alignment.center
-                        : Alignment.bottomCenter,
-                    height: widget.height,
-                    width: widget.height * widget.controller.aspectRatio,
-                    image: AssetEntityImageProvider(asset, isOriginal: false),
-                    enableMemoryCache: false,
-                    fit: BoxFit.cover,
+                key: _cropKey,
+                image: AssetEntityImageProvider(asset, isOriginal: true),
+                placeholderWidget: ValueListenableBuilder<bool>(
+                  valueListenable: _isLoadingError,
+                  builder: (context, isLoadingError, child) => Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      Opacity(
+                        opacity: widget.opacity,
+                        child: ExtendedImage(
+                          // to match crop alignment
+                          alignment: widget.controller.aspectRatio == 1.0
+                              ? Alignment.center
+                              : Alignment.bottomCenter,
+                          height: widget.height,
+                          width: widget.height * widget.controller.aspectRatio,
+                          image: AssetEntityImageProvider(asset,
+                              isOriginal: false),
+                          enableMemoryCache: false,
+                          fit: BoxFit.cover,
+                        ),
+                      ),
+                      // show backdrop when image is loading or if an error occured
+                      Positioned.fill(
+                          child: DecoratedBox(
+                        decoration: BoxDecoration(
+                            color: widget.theme?.cardColor.withOpacity(0.4)),
+                      )),
+                      isLoadingError
+                          ? Text(widget.textDelegate.loadFailed)
+                          : widget.loaderWidget,
+                    ],
                   ),
                 ),
                 // if the image could not be loaded (i.e unsupported format like RAW)
@@ -125,50 +139,50 @@ class CropViewerState extends State<CropViewer> {
         valueListenable: widget.controller.previewAsset,
         builder: (_, previewAsset, __) =>
             Selector<DefaultAssetPickerProvider, List<AssetEntity>>(
-                selector: (_, DefaultAssetPickerProvider p) => p.selectedAssets,
-                builder: (_, List<AssetEntity> selected, __) {
-                  _isLoadingError.value = false;
-                  final int effectiveIndex =
-                      selected.isEmpty ? 0 : selected.indexOf(selected.last);
+          selector: (_, DefaultAssetPickerProvider p) => p.selectedAssets,
+          builder: (_, List<AssetEntity> selected, __) {
+            _isLoadingError.value = false;
+            final int effectiveIndex =
+                selected.isEmpty ? 0 : selected.indexOf(selected.last);
 
-                  // if no asset is selected yet, returns the loader
-                  if (previewAsset == null && selected.isEmpty) {
-                    return widget.loaderWidget;
-                  }
+            // if no asset is selected yet, returns the loader
+            if (previewAsset == null && selected.isEmpty) {
+              return widget.loaderWidget;
+            }
 
-                  final asset = previewAsset ?? selected[effectiveIndex];
-                  final savedCropParam =
-                      widget.controller.get(asset)?.cropParam;
+            final asset = previewAsset ?? selected[effectiveIndex];
+            final savedCropParam = widget.controller.get(asset)?.cropParam;
 
-                  // if the selected asset changed, save the previous crop parameters state
-                  if (asset != _previousAsset && _previousAsset != null) {
-                    saveCurrentCropChanges();
-                  }
+            // if the selected asset changed, save the previous crop parameters state
+            if (asset != _previousAsset && _previousAsset != null) {
+              saveCurrentCropChanges();
+            }
 
-                  _previousAsset = asset;
+            _previousAsset = asset;
 
-                  // don't show crop button if an asset is selected or if there is only one crop
-                  return selected.length > 1 ||
-                          widget.controller.cropDelegate.cropRatios.length <= 1
-                      ? _buildCropView(asset, savedCropParam)
-                      : ValueListenableBuilder<int>(
-                          valueListenable: widget.controller.cropRatioIndex,
-                          builder: (context, index, child) => Stack(
-                            children: [
-                              Positioned.fill(
-                                child: _buildCropView(asset, savedCropParam),
-                              ),
-                              // Build crop aspect ratio button
-                              if (asset.type != AssetType.video)
-                              Positioned(
-                                left: 0,
-                                bottom: 12,
-                                child: _buildCropButton(),
-                              ),
-                            ],
+            // don't show crop button if an asset is selected or if there is only one crop
+            return selected.length > 1 ||
+                    widget.controller.cropDelegate.cropRatios.length <= 1
+                ? _buildCropView(asset, savedCropParam)
+                : ValueListenableBuilder<int>(
+                    valueListenable: widget.controller.cropRatioIndex,
+                    builder: (context, index, child) => Stack(
+                      children: [
+                        Positioned.fill(
+                          child: _buildCropView(asset, savedCropParam),
+                        ),
+                        // Build crop aspect ratio button
+                        if (asset.type != AssetType.video)
+                          Positioned(
+                            left: 0,
+                            bottom: 12,
+                            child: _buildCropButton(),
                           ),
-                        );
-                }),
+                      ],
+                    ),
+                  );
+          },
+        ),
       ),
     );
   }

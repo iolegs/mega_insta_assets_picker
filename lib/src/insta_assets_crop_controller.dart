@@ -212,29 +212,28 @@ class InstaAssetsCropController {
       if (file == null) {
         throw 'error file is null';
       }
-      
+
       if (asset.type == AssetType.video) {
         croppedFiles.add(file);
       } else {
-                // makes the sample file to not be too small
-      final sampledFile = await InstaAssetsCrop.sampleImage(
-        file: file,
-        preferredSize: (cropDelegate.preferredSize / scale).round(),
-      );
+        // makes the sample file to not be too small
+        final sampledFile = await InstaAssetsCrop.sampleImage(
+          file: file,
+          preferredSize: (cropDelegate.preferredSize / scale).round(),
+        );
 
-      if (area == null) {
-        croppedFiles.add(sampledFile);
-      } else {
-        // crop the file with the area selected
-        final croppedFile =
-            await InstaAssetsCrop.cropImage(file: sampledFile, area: area);
-        // delete the not needed sample file
-        sampledFile.delete();
+        if (area == null) {
+          croppedFiles.add(sampledFile);
+        } else {
+          // crop the file with the area selected
+          final croppedFile =
+              await InstaAssetsCrop.cropImage(file: sampledFile, area: area);
+          // delete the not needed sample file
+          sampledFile.delete();
 
-        croppedFiles.add(croppedFile);
+          croppedFiles.add(croppedFile);
+        }
       }
-      }
-
       // increase progress
       yield makeDetail((i + 1) * step);
     }
