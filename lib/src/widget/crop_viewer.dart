@@ -1,13 +1,13 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
-import 'package:insta_assets_picker/src/custom_packages/image_crop/crop.dart';
+import 'package:insta_assets_crop/insta_assets_crop.dart';
+import 'package:insta_assets_picker/insta_assets_picker.dart';
 import 'package:insta_assets_picker/src/insta_assets_crop_controller.dart';
 import 'package:insta_assets_picker/src/widget/video_preview.dart';
 import 'package:provider/provider.dart';
 import 'package:extended_image/extended_image.dart';
 import 'package:insta_assets_picker/src/widget/circle_icon_button.dart';
-import 'package:wechat_assets_picker/wechat_assets_picker.dart';
 
 class CropViewer extends StatefulWidget {
   const CropViewer({
@@ -72,38 +72,25 @@ class CropViewerState extends State<CropViewer> {
                     (_) => widget.controller.isCropViewReady.value = true),
               )
             : Crop(
-                key: _cropKey,
-                image: AssetEntityImageProvider(asset, isOriginal: true),
-                placeholderWidget: ValueListenableBuilder<bool>(
-                  valueListenable: _isLoadingError,
-                  builder: (context, isLoadingError, child) => Stack(
-                    alignment: Alignment.center,
-                    children: [
-                      Opacity(
-                        opacity: widget.opacity,
-                        child: ExtendedImage(
-                          // to match crop alignment
-                          alignment: widget.controller.isSquare.value
-                              ? Alignment.center
-                              : Alignment.bottomCenter,
-                          height: widget.height,
-                          width: widget.height * widget.controller.aspectRatio,
-                          image: AssetEntityImageProvider(asset,
-                              isOriginal: false),
-                          enableMemoryCache: false,
-                          fit: BoxFit.cover,
-                        ),
-                      ),
-                      // show backdrop when image is loading or if an error occured
-                      Positioned.fill(
-                          child: DecoratedBox(
-                        decoration: BoxDecoration(
-                            color: widget.theme?.cardColor.withOpacity(0.4)),
-                      )),
-                      isLoadingError
-                          ? Text(widget.textDelegate.loadFailed)
-                          : widget.loaderWidget,
-                    ],
+          key: _cropKey,
+          image: AssetEntityImageProvider(asset, isOriginal: true),
+          placeholderWidget: ValueListenableBuilder<bool>(
+            valueListenable: _isLoadingError,
+            builder: (context, isLoadingError, child) => Stack(
+              alignment: Alignment.center,
+              children: [
+                Opacity(
+                  opacity: widget.opacity,
+                  child: ExtendedImage(
+                    // to match crop alignment
+                    alignment: widget.controller.aspectRatio == 1.0
+                        ? Alignment.center
+                        : Alignment.bottomCenter,
+                    height: widget.height,
+                    width: widget.height * widget.controller.aspectRatio,
+                    image: AssetEntityImageProvider(asset, isOriginal: false),
+                    enableMemoryCache: false,
+                    fit: BoxFit.cover,
                   ),
                 ),
                 // if the image could not be loaded (i.e unsupported format like RAW)
@@ -160,44 +147,52 @@ class CropViewerState extends State<CropViewer> {
 
                   _previousAsset = asset;
 
-                  return selected.length > 1
+                  // don't show crop button if an asset is selected or if there is only one crop
+                  return selected.length > 1 ||
+                          widget.controller.cropDelegate.cropRatios.length <= 1
                       ? _buildCropView(asset, savedCropParam)
-                      : ValueListenableBuilder<bool>(
-                          valueListenable: widget.controller.isSquare,
-                          builder: (context, isSquare, child) => Stack(
+                      : ValueListenableBuilder<int>(
+                          valueListenable: widget.controller.cropRatioIndex,
+                          builder: (context, index, child) => Stack(
                             children: [
                               Positioned.fill(
                                 child: _buildCropView(asset, savedCropParam),
                               ),
                               // Build crop aspect ratio button
                               if (asset.type != AssetType.video)
-                                Positioned(
-                                  left: 0,
-                                  bottom: 12,
-                                  child: CircleIconButton(
-                                    onTap: () {
-                                      if (widget
-                                          .controller.isCropViewReady.value) {
-                                        widget.controller.isSquare.value =
-                                            !isSquare;
-                                      }
-                                    },
-                                    theme: widget.theme,
-                                    icon: Transform.rotate(
-                                      angle: 45 * math.pi / 180,
-                                      child: Icon(
-                                        isSquare
-                                            ? Icons.unfold_more
-                                            : Icons.unfold_less,
-                                      ),
-                                    ),
-                                  ),
-                                ),
+                              Positioned(
+                                left: 0,
+                                bottom: 12,
+                                child: _buildCropButton(),
+                              ),
                             ],
                           ),
                         );
                 }),
       ),
+    );
+  }
+
+  Widget _buildCropButton() {
+    return CircleIconButton(
+      onTap: () {
+        if (widget.controller.isCropViewReady.value) {
+          widget.controller.nextCropRatio();
+        }
+      },
+      theme: widget.theme,
+      // if crop ratios are the default ones, build UI similar to instagram
+      icon: widget.controller.cropDelegate.cropRatios == kDefaultInstaCropRatios
+          ? Transform.rotate(
+              angle: 45 * math.pi / 180,
+              child: Icon(
+                widget.controller.aspectRatio == 1
+                    ? Icons.unfold_more
+                    : Icons.unfold_less,
+              ),
+            )
+          // otherwise simply display the selected aspect ratio
+          : Text(widget.controller.aspectRatioString),
     );
   }
 }

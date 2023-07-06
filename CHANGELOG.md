@@ -1,3 +1,47 @@
+## 1.5.1
+
+- set `textButtonTheme` in the pickerTheme to customize the confirm button appareance
+
+## 1.5.0
+
+- remove `isSquareDefaultCrop` parameter
+- add the possibiliy the list aspect ratios selectable, the first element will be the default value
+
+```dart
+InstaAssetPicker.pickAssets(
+  context,
+  title: 'Select images',
+  cropDelegate: InstaAssetCropDelegate(cropRatios: [4 / 5, 1 / 1]),
+  onCompleted: (cropStream) {},
+),
+```
+
+## 1.4.0
+
+- add `specialItemBuilder` and `specialItemPosition` to picker
+
+### Breaking changes
+
+- Migrate to Flutter 3.10, drop supports for previous Flutter versions.
+
+## 1.3.0
+
+### Breaking changes
+
+- Migrate to Flutter 3.7, drop supports for previous Flutter versions.
+
+## 1.2.2
+
+- Internal migration from [image_crop](https://pub.dev/packages/image_crop) package to insta_assets_crop
+  - Fix cropped image size too small on android [image_crop/#75](https://github.com/lykhonis/image_crop/pull/75)
+- New `cropDelegate` parameter to specify crop options
+  - Increased default cropped preferred size from 1024px to 1080px (like instagram)
+
+### Breaking changes
+
+- Renamed `InstaAssetsCrop` into `InstaAssetsCropData`.
+- Moved `isSquareDefaultCrop` into `cropDelegate`.
+
 ## 1.2.1
 
 - Fix `PlatformException(PERMISSION_REQUESTING)` which causes loading error on first open on android

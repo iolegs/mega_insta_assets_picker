@@ -4,6 +4,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
+import 'package:insta_assets_picker/insta_assets_picker.dart';
 import 'package:insta_assets_picker/src/insta_assets_crop_controller.dart';
 import 'package:insta_assets_picker/src/widget/circle_icon_button.dart';
 import 'package:insta_assets_picker/src/widget/crop_viewer.dart';
@@ -35,12 +36,16 @@ class InstaAssetPickerBuilder extends DefaultAssetPickerBuilderDelegate {
     super.locale,
     super.keepScrollOffset,
     super.loadingIndicatorBuilder,
+    super.specialItemBuilder,
+    SpecialItemPosition? specialItemPosition,
     this.title,
     this.closeOnComplete = false,
-    this.isSquareDefaultCrop = true,
-  }) : super(
+    InstaAssetCropDelegate cropDelegate = const InstaAssetCropDelegate(),
+  })  : _cropController =
+            InstaAssetsCropController(keepScrollOffset, cropDelegate),
+        super(
           shouldRevertGrid: false,
-          specialItemPosition: SpecialItemPosition.none,
+          specialItemPosition: specialItemPosition ?? SpecialItemPosition.none,
         );
 
   final String? title;
@@ -51,8 +56,6 @@ class InstaAssetPickerBuilder extends DefaultAssetPickerBuilderDelegate {
   ///
   /// Defaults to `false`, like instagram
   final bool closeOnComplete;
-
-  final bool isSquareDefaultCrop;
 
   // LOCAL PARAMETERS
 
@@ -67,8 +70,7 @@ class InstaAssetPickerBuilder extends DefaultAssetPickerBuilderDelegate {
   final _cropViewerKey = GlobalKey<CropViewerState>();
 
   /// Controller handling the state of asset crop values and the exportation
-  late final _cropController =
-      InstaAssetsCropController(keepScrollOffset, isSquareDefaultCrop);
+  final InstaAssetsCropController _cropController;
 
   @override
   void dispose() {
@@ -327,10 +329,11 @@ class InstaAssetPickerBuilder extends DefaultAssetPickerBuilderDelegate {
       builder: (_, isLoaded, __) => Consumer<DefaultAssetPickerProvider>(
         builder: (_, DefaultAssetPickerProvider p, __) {
           return TextButton(
-            style: TextButton.styleFrom(
-              foregroundColor:
-                  p.isSelectedNotEmpty ? themeColor : theme.dividerColor,
-            ),
+            style: pickerTheme?.textButtonTheme.style ??
+                TextButton.styleFrom(
+                  foregroundColor: themeColor,
+                  disabledForegroundColor: theme.dividerColor,
+                ),
             onPressed: isLoaded && p.isSelectedNotEmpty
                 ? () => onConfirm(context)
                 : null,
@@ -571,8 +574,10 @@ class InstaAssetPickerBuilder extends DefaultAssetPickerBuilderDelegate {
       height: _kIndicatorSize,
       padding: const EdgeInsets.all(2),
       decoration: BoxDecoration(
-        border: Border.all(color: Colors.white, width: 1),
-        color: isSelected ? themeColor : Colors.white.withOpacity(.2),
+        border: Border.all(color: theme.unselectedWidgetColor, width: 1),
+        color: isSelected
+            ? themeColor
+            : theme.unselectedWidgetColor.withOpacity(.2),
         shape: BoxShape.circle,
       ),
       child: FittedBox(
@@ -600,7 +605,7 @@ class InstaAssetPickerBuilder extends DefaultAssetPickerBuilderDelegate {
               duration: switchingPathDuration,
               padding: const EdgeInsets.all(4),
               color: isPreview
-                  ? Colors.white.withOpacity(.5)
+                  ? theme.unselectedWidgetColor.withOpacity(.5)
                   : theme.colorScheme.background.withOpacity(.1),
               child: Align(
                 alignment: AlignmentDirectional.topEnd,
