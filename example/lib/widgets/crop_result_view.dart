@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:insta_assets_picker/insta_assets_picker.dart';
+import 'package:wechat_assets_picker/wechat_assets_picker.dart' show AssetType;
 
 class CropResultView extends StatelessWidget {
   const CropResultView({
@@ -70,7 +71,14 @@ class CropResultView extends StatelessWidget {
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(4.0),
                   ),
-                  child: Image.file(croppedFiles[index]),
+                  child: selectedAssets[index].type == AssetType.video
+                      ? Container(
+                          color: Colors.amber,
+                          child: const Center(
+                            child: Text('Video file'),
+                          ),
+                        )
+                      : Image.file(croppedFiles[index]),
                 ),
               );
             },

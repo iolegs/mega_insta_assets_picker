@@ -16,6 +16,8 @@ dependencies:
   wechat_assets_picker: ^8.5.0
   provider: ^6.0.5 # match with wechat_assets_picker package
   extended_image: ^8.0.1 # match with wechat_assets_picker package
+  video_player: ^2.7.0
+  visibility_detector: ^0.4.0+2
 
 dev_dependencies:
   flutter_test:

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:fraction/fraction.dart';
 import 'package:insta_assets_crop/insta_assets_crop.dart';
 import 'package:insta_assets_picker/insta_assets_picker.dart';
+import 'package:wechat_assets_picker/wechat_assets_picker.dart';
 
 /// Uses [InstaAssetsCropSingleton] to keep crop parameters in memory until the picker is disposed
 /// Similar to [Singleton] class from `wechat_assets_picker` package
@@ -202,7 +203,8 @@ class InstaAssetsCropController {
     final step = 1 / list.length;
 
     for (var i = 0; i < list.length; i++) {
-      final file = await list[i].asset.originFile;
+      final asset = list[i].asset;
+      final file = await asset.originFile;
 
       final scale = list[i].scale;
       final area = list[i].area;
@@ -211,24 +213,27 @@ class InstaAssetsCropController {
         throw 'error file is null';
       }
 
-      // makes the sample file to not be too small
-      final sampledFile = await InstaAssetsCrop.sampleImage(
-        file: file,
-        preferredSize: (cropDelegate.preferredSize / scale).round(),
-      );
-
-      if (area == null) {
-        croppedFiles.add(sampledFile);
+      if (asset.type == AssetType.video) {
+        croppedFiles.add(file);
       } else {
-        // crop the file with the area selected
-        final croppedFile =
-            await InstaAssetsCrop.cropImage(file: sampledFile, area: area);
-        // delete the not needed sample file
-        sampledFile.delete();
+        // makes the sample file to not be too small
+        final sampledFile = await InstaAssetsCrop.sampleImage(
+          file: file,
+          preferredSize: (cropDelegate.preferredSize / scale).round(),
+        );
 
-        croppedFiles.add(croppedFile);
+        if (area == null) {
+          croppedFiles.add(sampledFile);
+        } else {
+          // crop the file with the area selected
+          final croppedFile =
+              await InstaAssetsCrop.cropImage(file: sampledFile, area: area);
+          // delete the not needed sample file
+          sampledFile.delete();
+
+          croppedFiles.add(croppedFile);
+        }
       }
-
       // increase progress
       yield makeDetail((i + 1) * step);
     }
